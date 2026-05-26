@@ -1,0 +1,68 @@
+import os
+
+def compare_directories_full():
+    dir1_name = input("첫 번째 디렉토리 이름을 입력하세요: ")
+    dir2_name = input("두 번째 디렉토리 이름을 입력하세요: ")
+
+    base_dir = os.getcwd()
+    path1 = os.path.join(base_dir, dir1_name)
+    path2 = os.path.join(base_dir, dir2_name)
+
+    if not (os.path.isdir(path1) and os.path.isdir(path2)):
+        print("입력한 디렉토리가 존재하지 않습니다.")
+        return
+
+    # os.scandir()을 사용하여 파일 이름만 추출하고 정렬 (가나다/알파벳 순)
+    files1 = sorted([entry.name for entry in os.scandir(path1) if entry.is_file()])
+    files2 = sorted([entry.name for entry in os.scandir(path2) if entry.is_file()])
+
+    print("\n========================================")
+    
+    print(f"[{dir1_name}] 디렉토리의 파일 목록 ({len(files1)}개):")
+    for f in files1:
+        print(f"  - {f}")
+        
+    print(f"\n[{dir2_name}] 디렉토리의 파일 목록 ({len(files2)}개):")
+    for f in files2:
+        print(f"  - {f}")
+        
+    print("========================================\n")
+
+    if len(files1) != len(files2):
+        print(f"[종료] 파일 개수가 다릅니다! 1:1 비교를 진행할 수 없습니다.")
+        return
+    else:
+        print(f"파일 개수 동일: 총 {len(files1)}쌍의 파일을 비교합니다.\n")
+
+    for f1_name, f2_name in zip(files1, files2):
+        print(f" 비교 대상: [{dir1_name}의 '{f1_name}'] vs [{dir2_name}의 '{f2_name}']")
+
+        if f1_name == f2_name:
+            print("  - 이름:  같음")
+        else:
+            print("  - 이름:  다름")
+
+        f1_path = os.path.join(path1, f1_name)
+        f2_path = os.path.join(path2, f2_name)
+        
+        # os.stat()을 활용해 파일의 세부 상태(크기)를 가져옵니다.
+        size1 = os.stat(f1_path).st_size
+        size2 = os.stat(f2_path).st_size
+
+        if size1 == size2:
+            print(f"  - 크기:  같음 ({size1} bytes)")
+        else:
+            print(f"  - 크기:  다름 ({size1} bytes vs {size2} bytes)")
+
+
+        with open(f1_path, 'rb') as f1, open(f2_path, 'rb') as f2:
+            if f1.read() == f2.read():
+                print("  - 내용:  같음\n")
+            else:
+                print("  - 내용:  다름\n")
+
+    print("========================================")
+    print("모든 파일 비교가 완료되었습니다.")
+
+if __name__ == "__main__":
+    compare_directories_full()
