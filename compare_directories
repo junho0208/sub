@@ -1,67 +1,59 @@
 import os
 
-def compare_directories_full():
-    dir1_name = input("첫 번째 디렉토리 이름을 입력하세요: ")
-    dir2_name = input("두 번째 디렉토리 이름을 입력하세요: ")
+def get_file_info(directory_path):
 
-    base_dir = os.getcwd()
-    path1 = os.path.join(base_dir, dir1_name)
-    path2 = os.path.join(base_dir, dir2_name)
-
-    if not (os.path.isdir(path1) and os.path.isdir(path2)):
-        print("입력한 디렉토리가 존재하지 않습니다.")
-        return
-
-
-    files1 = sorted([entry.name for entry in os.scandir(path1) if entry.is_file()])
-    files2 = sorted([entry.name for entry in os.scandir(path2) if entry.is_file()])
-
-    print("\n========================================")
+    file_info = {}
     
-    print(f"[{dir1_name}] 디렉토리의 파일 목록 ({len(files1)}개):")
-    for f in files1:
-        print(f"  - {f}")
-        
-    print(f"\n[{dir2_name}] 디렉토리의 파일 목록 ({len(files2)}개):")
-    for f in files2:
-        print(f"  - {f}")
-        
-    print("========================================\n")
+    with os.scandir(directory_path) as entries:
+        for entry in entries:
+            if entry.is_file():
+                file_info[entry.name] = {
+                    'size': entry.stat().st_size,
+                    'path': entry.path
+                }
+    return file_info
 
-    if len(files1) != len(files2):
-        print(f"[종료] 파일 개수가 다릅니다! 1:1 비교를 진행할 수 없습니다.")
+def main():
+
+    dir1_name = input("첫 번째 하위 디렉토리 이름을 입력하세요: ")
+    dir2_name = input("두 번째 하위 디렉토리 이름을 입력하세요: ")
+
+
+    if not os.path.isdir(dir1_name) or not os.path.isdir(dir2_name):
+        print("오류: 입력한 디렉토리가 현재 위치에 존재하지 않습니다.")
         return
-    else:
-        print(f"파일 개수 동일: 총 {len(files1)}쌍의 파일을 비교합니다.\n")
 
-    for f1_name, f2_name in zip(files1, files2):
-        print(f" 비교 대상: [{dir1_name}의 '{f1_name}'] vs [{dir2_name}의 '{f2_name}']")
+    
+    dir1_files = get_file_info(dir1_name)
+    dir2_files = get_file_info(dir2_name)
 
-        if f1_name == f2_name:
-            print("  - 이름:  같음")
-        else:
-            print("  - 이름:  다름")
+  
+    if len(dir1_files) != len(dir2_files):
+        print(f"결과: 두 디렉토리의 파일 개수가 다릅니다. "
+              f"({dir1_name}: {len(dir1_files)}개, {dir2_name}: {len(dir2_files)}개)")
+        return
 
-        f1_path = os.path.join(path1, f1_name)
-        f2_path = os.path.join(path2, f2_name)
-        
-        size1 = os.stat(f1_path).st_size
-        size2 = os.stat(f2_path).st_size
-
-        if size1 == size2:
-            print(f"  - 크기:  같음 ({size1} bytes)")
-        else:
-            print(f"  - 크기:  다름 ({size1} bytes vs {size2} bytes)")
+    if set(dir1_files.keys()) != set(dir2_files.keys()):
+        print("결과: 두 디렉토리의 파일 이름(구성)이 다릅니다.")
+        return
 
 
-        with open(f1_path, 'rb') as f1, open(f2_path, 'rb') as f2:
-            if f1.read() == f2.read():
-                print("  - 내용:  같음\n")
-            else:
-                print("  - 내용:  다름\n")
+    for name in dir1_files:
+        file1 = dir1_files[name]
+        file2 = dir2_files[name]
 
-    print("========================================")
-    print("모든 파일 비교가 완료되었습니다.")
+
+        if file1['size'] != file2['size']:
+            print(f"결과: 파일 '{name}'의 크기가 다릅니다.")
+            return
+
+
+        with open(file1['path'], 'rb') as f1, open(file2['path'], 'rb') as f2:
+            if f1.read() != f2.read():
+                print(f"결과: 파일 '{name}'의 내용이 다릅니다.")
+                return
+
+    print("결과: 두 디렉토리는 완벽하게 동일합니다. (파일 개수, 이름, 크기, 내용 모두 일치)")
 
 if __name__ == "__main__":
-    compare_directories_full()
+    main()
